@@ -1,0 +1,172 @@
+﻿@model FacturasJFAZ.Models.ViewModels.FacturaViewModel
+
+@{
+    Layout = "_Layout";
+}
+
+@{
+    ViewData["Title"] = "Nueva Factura";
+}
+
+<h2>Nueva Factura</h2>
+<button id="btnNuevo" class="btn btn-primary">Nuevo</button>
+
+<form asp-action="Create" method="post">
+    <div class="form-group">
+        <label for="IdCliente">Cliente</label>
+        <select id="IdCliente" name="IdCliente" class="form-control">
+            <option value="">Seleccione un cliente</option>
+            @foreach (var cliente in Model.Clientes)
+            {
+                <option value="@cliente.Id">@cliente.RazonSocial</option>
+            }
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="NumeroFactura">Número de Factura</label>
+        <input type="text" id="NumeroFactura" name="NumeroFactura" class="form-control" />
+    </div>
+    <button id="btnAgregarProducto" class="btn btn-primary">Agregar Producto</button>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Precio Unitario</th>
+                <th>Cantidad</th>
+                <th>Imagen</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <select id="Productos_0_IdProducto" name="Productos[0].IdProducto" class="form-control" onchange="actualizarDetalles(0)">
+                        <option value="">Seleccione un producto</option>
+                        @foreach (var producto in Model.Productos)
+                        {
+                            <option value="@producto.Id">@producto.NombreProducto</option>
+                        }
+                    </select>
+                </td>
+                <td>
+                    <input id="Productos_0_PrecioUnitario" name="Productos[0].PrecioUnitario" type="text" class="form-control" disabled="disabled" />
+                </td>
+                <td>
+                    <input id="Productos_0_Cantidad" name="Productos[0].Cantidad" type="text" class="form-control" onchange="actualizarDetalles(0)" />
+                </td>
+                <td>
+                    <input type="file" id="Productos_0_Imagen" name="Productos[0].Imagen" onchange="cargarImagen(0, this)" />
+                    <img id="Productos_0_ImagenPreview" src="" alt="Vista previa de imagen" style="max-width: 100px; max-height: 100px;" />
+                </td>
+                <td>
+                    <input id="Productos_0_Total" name="Productos[0].Total" type="text" class="form-control" disabled="disabled" />
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Sub Total</th>
+                <th>Impuestos (19%)</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <input id="SubTotal" name="SubTotal" type="text" class="form-control" readonly="readonly" />
+                </td>
+                <td>
+                    <input id="Impuestos" name="Impuestos" type="text" class="form-control" readonly="readonly" />
+                </td>
+                <td>
+                    <input id="Total" name="Total" type="text" class="form-control" readonly="readonly" />
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <button id="btnGuardar" class="btn btn-success">Guardar</button>
+</form>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    var detallesCount = 1;
+
+    // Función para actualizar los detalles al seleccionar un producto
+    function actualizarDetalles(index) {
+        var precioUnitario = parseFloat($("#Productos_" + index + "_PrecioUnitario").val()) || 0;
+        var cantidad = parseInt($("#Productos_" + index + "_Cantidad").val()) || 0;
+        var total = precioUnitario * cantidad;
+
+        $("#Productos_" + index + "_Total").val(total.toFixed(2));
+
+        calcularTotales();
+    }
+
+    // Función para calcular los totales
+    function calcularTotales() {
+        var subTotal = 0;
+
+        for (var i = 0; i < detallesCount; i++) {
+            subTotal += parseFloat($("#Productos_" + i + "_Total").val()) || 0;
+        }
+
+        var impuestos = subTotal * 0.19;
+        var total = subTotal + impuestos;
+
+        $("#SubTotal").val(subTotal.toFixed(2));
+        $("#Impuestos").val(impuestos.toFixed(2));
+        $("#Total").val(total.toFixed(2));
+    }
+
+    // Función para cargar una vista previa de la imagen
+    function cargarImagen(index, input) {
+        var file = input.files[0];
+        var reader = new FileReader();
+
+        reader.onload = function (e) {
+            $("#Productos_" + index + "_ImagenPreview").attr("src", e.target.result);
+        };
+
+        reader.readAsDataURL(file);
+    }
+
+    $(document).ready(function () {
+        $("#btnNuevo").click(function () {
+            // Limpiar datos de la pantalla
+            detallesCount = 1;
+            $("#IdCliente").val("");
+            $("#NumeroFactura").val("");
+            $("#SubTotal").val("0.00");
+            $("#Impuestos").val("0.00");
+            $("#Total").val("0.00");
+            $("select[id^='Productos_']").val("");
+            $("input[id^='Productos_']").val("").prop("disabled", false);
+            $("input[id^='Productos_ImagenPreview']").attr("src", "");
+
+            // Dejar la pantalla "lista" para la captura de nueva factura
+        });
+
+        $("#btnAgregarProducto").click(function () {
+            // Agregar una línea de "detalle" a la factura
+            var newRow = '<tr>' +
+                '<td><select id="Productos_' + detallesCount + '_IdProducto" name="Productos[' + detallesCount + '].IdProducto" class="form-control" onchange="actualizarDetalles(' + detallesCount + ')"><option value="">Seleccione un producto</option>@foreach (var producto in Model.Productos) {<option value="' + producto.Id + '">' + producto.Nombre + '</option>}</select></td>' +
+                '<td><input id="Productos_' + detallesCount + '_PrecioUnitario" name="Productos[' + detallesCount + '].PrecioUnitario" type="text" class="form-control" disabled="disabled" /></td>' +
+                '<td><input id="Productos_' + detallesCount + '_Cantidad" name="Productos[' + detallesCount + '].Cantidad" type="text" class="form-control" onchange="actualizarDetalles(' + detallesCount + ')" /></td>' +
+                '<td><input type="file" id="Productos_' + detallesCount + '_Imagen" name="Productos[' + detallesCount + '].Imagen" onchange="cargarImagen(' + detallesCount + ', this)" /><img id="Productos_' + detallesCount + '_ImagenPreview" src="" alt="Vista previa de imagen" style="max-width: 100px; max-height: 100px;" /></td>' +
+                '<td><input id="Productos_' + detallesCount + '_Total" name="Productos[' + detallesCount + '].Total" type="text" class="form-control" disabled="disabled" /></td>' +
+                '</tr>';
+
+            $("table tbody").append(newRow);
+            detallesCount++;
+
+            // Después de agregar una nueva línea, actualiza las opciones de selección de productos
+            $("select[id^='Productos_']:last option").each(function () {
+                var thisOption = $(this);
+                $("select[id^='Productos_']:not(:last) option[value='" + thisOption.val() + "']").remove();
+            });
+        });
+    });
+</script>

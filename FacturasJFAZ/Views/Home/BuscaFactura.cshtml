@@ -1,0 +1,66 @@
+﻿@model FacturasJFAZ.Models.ViewModels.FacturaViewModel
+
+@{
+    Layout = "_Layout";
+}
+
+<h2>Buscar y Ver Facturas</h2>
+
+@using (Html.BeginForm("Search", "Factura", FormMethod.Get))
+{
+    <div class="form-group">
+        <label for="TipoBusqueda">Tipo de Búsqueda:</label>
+        <select class="form-control" id="TipoBusqueda" name="TipoBusqueda" onchange="onTipoBusquedaChange()">
+            <option value="Cliente">Cliente</option>
+            <option value="NumeroFactura">Número de Factura</option>
+        </select>
+    </div>
+
+    <div id="ClienteSearch" class="form-group">
+        <label for="IdCliente">Cliente:</label>
+        @Html.DropDownList("IdCliente", Model.Clientes.Select(c => new SelectListItem { Text = c.RazonSocial, Value = c.Id.ToString() }), "Seleccione un cliente", new { @class = "form-control" })
+    </div>
+
+
+    <div id="NumeroFacturaSearch" class="form-group">
+        <label for="NumeroFactura">Número de Factura:</label>
+        @Html.TextBox("NumeroFactura", Model.NumeroFactura, new { @class = "form-control" })
+    </div>
+
+    <button type="submit" class="btn btn-primary">Buscar</button>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Número de Factura</th>
+            <th>Fecha Emisión</th>
+            <th>Total Facturado</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var factura in Model.Facturas)
+        {
+            <tr>
+                <td>@factura.NumeroFactura</td>
+                <td>@factura.FechaEmisionFactura.ToShortDateString()</td>
+                <td>@factura.TotalFactura.ToString("C")</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section scripts {
+    <script>
+        function onTipoBusquedaChange() {
+            var tipoBusqueda = $("#TipoBusqueda").val();
+            if (tipoBusqueda === "Cliente") {
+                $("#ClienteSearch").show();
+                $("#NumeroFacturaSearch").hide();
+            } else if (tipoBusqueda === "NumeroFactura") {
+                $("#ClienteSearch").hide();
+                $("#NumeroFacturaSearch").show();
+            }
+        }
+    </script>
+}
